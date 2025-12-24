@@ -5,8 +5,7 @@ from PIL import Image
 import pytesseract
 
 from backend import (
-    generate_ai_explanation,
-    generate_hr_summary,
+    generate_final_hr_report,
     generate_pdf_report
 )
 
@@ -101,7 +100,7 @@ if staff_df is not None:
     )
 
 # =========================
-# MAIN PANEL — QUERY
+# MAIN PANEL — HR DECISION
 # =========================
 if employee_id and staff_df is not None:
 
@@ -127,9 +126,9 @@ if employee_id and staff_df is not None:
         placeholder="Is this employee eligible for confirmation considering performance and payroll compliance?"
     )
 
-    if st.button("🔍 Run HR Analysis", use_container_width=True):
+    if st.button("🔍 Generate HR Decision Report", use_container_width=True):
 
-        with st.spinner("Running HR Intelligence..."):
+        with st.spinner("Generating HR decision report..."):
             context = {
                 "staffline_employee": staff_emp,
                 "staffline_policies": company_policies,
@@ -138,18 +137,12 @@ if employee_id and staff_df is not None:
                 "user_question": user_query
             }
 
-            analysis = generate_ai_explanation(context)
+            final_report = generate_final_hr_report(context)
 
-        st.markdown("### 📊 Detailed HR Analysis")
-        st.markdown(analysis)
+        st.markdown("### 📑 HR Decision Report")
+        st.markdown(final_report)
 
-        with st.spinner("Generating executive summary..."):
-            summary = generate_hr_summary(analysis)
-
-        st.markdown("### 🧾 Executive Summary")
-        st.markdown(summary)
-
-        pdf_bytes = generate_pdf_report(summary)
+        pdf_bytes = generate_pdf_report(final_report)
 
         st.download_button(
             "📥 Download HR Report (PDF)",
