@@ -12,14 +12,17 @@ from backend import generate_hr_decision, generate_pdf_report
 st.set_page_config(page_title="HR Intelligence Agent", layout="wide")
 
 st.title("🧑‍💼 HR Intelligence Agent")
-st.caption("Dynamic HR Intelligence – Individual & Organization-wide Analysis")
+st.caption("Organization-wide HR Analytics & Decision Intelligence")
 
 # =========================
-# LEFT PANEL — BRANDING & UPLOADS
+# LEFT PANEL — BRANDING
 # =========================
 st.sidebar.image("compunnel_logo.jpg", use_container_width=True)
 st.sidebar.header("📥 Upload HR Data")
 
+# =========================
+# FILE UPLOADS
+# =========================
 staff_emp_file = st.sidebar.file_uploader(
     "Employee Master Data (Staffline)",
     type=["csv", "xlsx"]
@@ -43,7 +46,7 @@ unlocku_file = st.sidebar.file_uploader(
 # =========================
 # LOAD DATA
 # =========================
-staff_df = keka_df = unlocku_df = None
+staff_df = finance_df = perf_df = None
 company_policies = ""
 
 if staff_emp_file:
@@ -62,33 +65,59 @@ if policy_file:
     st.sidebar.success("Company policies loaded")
 
 if keka_file:
-    keka_df = pd.read_csv(keka_file) if keka_file.name.endswith(".csv") else pd.read_excel(keka_file)
-    st.sidebar.success("Keka finance loaded")
+    finance_df = pd.read_csv(keka_file) if keka_file.name.endswith(".csv") else pd.read_excel(keka_file)
+    st.sidebar.success("Finance data loaded")
 
 if unlocku_file:
-    unlocku_df = pd.read_csv(unlocku_file) if unlocku_file.name.endswith(".csv") else pd.read_excel(unlocku_file)
-    st.sidebar.success("UnlockU performance loaded")
+    perf_df = pd.read_csv(unlocku_file) if unlocku_file.name.endswith(".csv") else pd.read_excel(unlocku_file)
+    st.sidebar.success("Performance data loaded")
 
 # =========================
-# MAIN PANEL — QUERY (NO EMPLOYEE ID REQUIRED)
+# HR ANALYTICS LAYER (KEY FIX)
 # =========================
-if staff_df is not None and keka_df is not None and unlocku_df is not None and company_policies:
+def build_hr_signals(staff_df, finance_df, perf_df):
+    merged = perf_df.merge(staff_df, on="employee_id", how="left") \
+                    .merge(finance_df, on="employee_id", how="left")
+
+    merged["attrition_risk"] = (
+        (merged["performance_status"] == "NEEDS_IMPROVEMENT") |
+        (merged["learning_hours_completed"] < 20) |
+        (merged["bank_verified"] == False)
+    )
+
+    high_risk = merged[merged["attrition_risk"] == True]
+
+    signals = {
+        "total_employees": len(staff_df),
+        "high_attrition_risk_count": len(high_risk),
+        "high_risk_sample": high_risk[
+            ["employee_id", "department", "performance_status", "learning_hours_completed"]
+        ].head(15).to_dict(orient="records"),
+        "department_risk_distribution": high_risk["department"].value_counts().head(5).to_dict()
+    }
+
+    return signals
+
+# =========================
+# MAIN PANEL — DYNAMIC HR CHAT
+# =========================
+if staff_df is not None and finance_df is not None and perf_df is not None and company_policies:
 
     st.subheader("🧠 Ask HR Intelligence Questions")
 
     user_query = st.text_area(
-        "Examples:\n• Provide a list of employees likely to leave\n• Who are at payroll risk?\n• Is E1050 eligible for confirmation?",
+        "Examples:\n• List employees likely to leave\n• Which departments are at risk?\n• How many employees need HR intervention?",
         height=140
     )
 
     if st.button("🔍 Run HR Intelligence", use_container_width=True):
 
-        with st.spinner("Analyzing organizational HR data..."):
+        with st.spinner("Analyzing HR signals..."):
+            hr_signals = build_hr_signals(staff_df, finance_df, perf_df)
+
             context = {
-                "staffline_employee_data": staff_df.to_dict(orient="records"),
-                "keka_finance_data": keka_df.to_dict(orient="records"),
-                "unlocku_performance_data": unlocku_df.to_dict(orient="records"),
-                "staffline_policies": company_policies,
+                "hr_signals": hr_signals,
+                "company_policies": company_policies,
                 "user_question": user_query
             }
 
