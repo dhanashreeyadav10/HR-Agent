@@ -29,12 +29,14 @@
 #     st.markdown(explanation)
 
 
-
 import streamlit as st
 import pandas as pd
+import pdfplumber
+from PIL import Image
+import pytesseract
 from backend import generate_ai_explanation
 
-# 🔴 FORCE RESET (remove later)
+# 🔴 FORCE RESET (remove later if needed)
 st.session_state.clear()
 
 # -------------------------
@@ -45,30 +47,33 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("## 🧑‍💼 HR Knowledge-Based Intelligence Agent")
-st.markdown(
-    "This system analyzes **employee data + company policies** "
-    "and provides **policy-aware HR insights**."
-)
+st.title("🧑‍💼 HR Knowledge-Based Intelligence Agent")
+st.caption("Employee data + Company policies (PDF / TXT / Image) → HR Insights")
 
 # =========================
-# LEFT PANEL — DATA UPLOAD
+# LEFT PANEL — UPLOADS
 # =========================
-st.sidebar.markdown("## 📥 Knowledge Base Upload")
+st.sidebar.header("📥 Knowledge Base Upload")
 
+# Employee Data
 emp_file = st.sidebar.file_uploader(
-    "Upload Employee Master Data",
+    "Upload Employee Data (CSV / Excel)",
     type=["csv", "xlsx"]
 )
 
+# Policy Files
 policy_file = st.sidebar.file_uploader(
-    "Upload Company Policies (Staffline)",
-    type=["csv", "xlsx", "txt"]
+    "Upload Company Policy (PDF / TXT / Image)",
+    type=["pdf", "txt", "png", "jpg", "jpeg"]
 )
 
 employee_df = None
+employee_data = None
 company_policies = ""
 
+# -------------------------
+# LOAD EMPLOYEE DATA
+# -------------------------
 if emp_file:
     employee_df = (
         pd.read_csv(emp_file)
@@ -77,26 +82,35 @@ if emp_file:
     )
     st.sidebar.success("Employee data loaded")
 
+# -------------------------
+# LOAD POLICY DATA
+# -------------------------
 if policy_file:
-    if policy_file.name.endswith(".txt"):
-        company_policies = policy_file.read().decode("utf-8")
-    else:
-        df_policy = (
-            pd.read_csv(policy_file)
-            if policy_file.name.endswith(".csv")
-            else pd.read_excel(policy_file)
-        )
-        company_policies = df_policy.to_string(index=False)
+    file_name = policy_file.name.lower()
 
-    st.sidebar.success("Company policies loaded")
+    try:
+        if file_name.endswith(".txt"):
+            company_policies = policy_file.read().decode("utf-8")
+
+        elif file_name.endswith(".pdf"):
+            with pdfplumber.open(policy_file) as pdf:
+                pages = [page.extract_text() for page in pdf.pages]
+            company_policies = "\n".join([p for p in pages if p])
+
+        elif file_name.endswith((".png", ".jpg", ".jpeg")):
+            image = Image.open(policy_file)
+            company_policies = pytesseract.image_to_string(image)
+
+        st.sidebar.success("Company policy loaded successfully")
+
+    except Exception as e:
+        st.sidebar.error(f"Policy extraction failed: {e}")
 
 # =========================
 # EMPLOYEE SELECTION
 # =========================
-employee_data = None
-
 if employee_df is not None:
-    st.sidebar.markdown("### 👤 Select Employee")
+    st.sidebar.subheader("👤 Select Employee")
     emp_id = st.sidebar.selectbox(
         "Employee ID",
         employee_df["employee_id"].astype(str)
@@ -113,14 +127,14 @@ if employee_df is not None:
 # =========================
 if employee_data:
 
-    left, right = st.columns([1.4, 1.6])
+    left, right = st.columns([1.3, 1.7])
 
     with left:
-        st.markdown("### 📄 Employee Details (Dynamic)")
+        st.subheader("📄 Employee Details")
         st.json(employee_data)
 
     with right:
-        st.markdown("### 🧠 HR Intelligence Query")
+        st.subheader("🧠 HR Intelligence Query")
 
         user_query = st.text_area(
             "Ask a policy-aware HR question",
@@ -128,11 +142,10 @@ if employee_data:
             placeholder="Is this employee eligible for confirmation as per company policy?"
         )
 
-        run_btn = st.button("🔍 Get HR Insight", use_container_width=True)
+        if st.button("🔍 Get HR Insight", use_container_width=True):
 
-        if run_btn:
-            if not company_policies:
-                st.error("❌ Company policies not uploaded")
+            if not company_policies.strip():
+                st.error("❌ Please upload company policy")
             elif not user_query.strip():
                 st.error("❌ Please enter a question")
             else:
@@ -149,7 +162,6 @@ if employee_data:
                 st.markdown(response)
 
 else:
-    st.warning("⬅ Upload employee data and policies to begin analysis")
-
+    st.info("⬅ Upload employee data and company policy to begin")
 
 
