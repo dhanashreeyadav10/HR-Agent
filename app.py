@@ -4,10 +4,7 @@ import pdfplumber
 from PIL import Image
 import pytesseract
 
-from backend import (
-    generate_final_hr_report,
-    generate_pdf_report
-)
+from backend import generate_hr_decision, generate_pdf_report
 
 # -------------------------
 # PAGE CONFIG
@@ -15,21 +12,16 @@ from backend import (
 st.set_page_config(page_title="HR Intelligence Agent", layout="wide")
 
 st.title("🧑‍💼 HR Intelligence Agent")
-st.caption("Staffline + Keka + UnlockU → Unified HR Decisions")
+st.caption("Dynamic HR Intelligence – Individual & Organization-wide Analysis")
 
 # =========================
-# LEFT PANEL — BRANDING
+# LEFT PANEL — BRANDING & UPLOADS
 # =========================
 st.sidebar.image("compunnel_logo.jpg", use_container_width=True)
-st.sidebar.header("📥 Upload Portal Data")
-
-# =========================
-# STAFFLINE
-# =========================
-st.sidebar.subheader("🏢 Staffline Portal")
+st.sidebar.header("📥 Upload HR Data")
 
 staff_emp_file = st.sidebar.file_uploader(
-    "Employee Master Data (CSV / Excel)",
+    "Employee Master Data (Staffline)",
     type=["csv", "xlsx"]
 )
 
@@ -38,23 +30,13 @@ policy_file = st.sidebar.file_uploader(
     type=["pdf", "txt", "png", "jpg", "jpeg"]
 )
 
-# =========================
-# KEKA
-# =========================
-st.sidebar.subheader("💰 Keka Portal")
-
 keka_file = st.sidebar.file_uploader(
-    "Employee Finance Data",
+    "Employee Finance Data (Keka)",
     type=["csv", "xlsx"]
 )
 
-# =========================
-# UNLOCKU
-# =========================
-st.sidebar.subheader("📈 UnlockU Portal")
-
 unlocku_file = st.sidebar.file_uploader(
-    "Employee Performance Data",
+    "Employee Performance Data (UnlockU)",
     type=["csv", "xlsx"]
 )
 
@@ -77,7 +59,6 @@ if policy_file:
             company_policies = "\n".join(page.extract_text() or "" for page in pdf.pages)
     else:
         company_policies = pytesseract.image_to_string(Image.open(policy_file))
-
     st.sidebar.success("Company policies loaded")
 
 if keka_file:
@@ -89,67 +70,41 @@ if unlocku_file:
     st.sidebar.success("UnlockU performance loaded")
 
 # =========================
-# EMPLOYEE SELECTION
+# MAIN PANEL — QUERY (NO EMPLOYEE ID REQUIRED)
 # =========================
-employee_id = None
+if staff_df is not None and keka_df is not None and unlocku_df is not None and company_policies:
 
-if staff_df is not None:
-    employee_id = st.sidebar.selectbox(
-        "Select Employee ID",
-        staff_df["employee_id"].astype(str)
-    )
-
-# =========================
-# MAIN PANEL — HR DECISION
-# =========================
-if employee_id and staff_df is not None:
-
-    staff_emp = staff_df[staff_df["employee_id"].astype(str) == employee_id].iloc[0].to_dict()
-
-    keka_emp = (
-        keka_df[keka_df["employee_id"].astype(str) == employee_id].iloc[0].to_dict()
-        if keka_df is not None and employee_id in keka_df["employee_id"].astype(str).values
-        else {}
-    )
-
-    unlocku_emp = (
-        unlocku_df[unlocku_df["employee_id"].astype(str) == employee_id].iloc[0].to_dict()
-        if unlocku_df is not None and employee_id in unlocku_df["employee_id"].astype(str).values
-        else {}
-    )
-
-    st.subheader("🧠 HR Intelligence Query")
+    st.subheader("🧠 Ask HR Intelligence Questions")
 
     user_query = st.text_area(
-        "Ask an HR decision question",
-        height=120,
-        placeholder="Is this employee eligible for confirmation considering performance and payroll compliance?"
+        "Examples:\n• Provide a list of employees likely to leave\n• Who are at payroll risk?\n• Is E1050 eligible for confirmation?",
+        height=140
     )
 
-    if st.button("🔍 Generate HR Decision Report", use_container_width=True):
+    if st.button("🔍 Run HR Intelligence", use_container_width=True):
 
-        with st.spinner("Generating HR decision report..."):
+        with st.spinner("Analyzing organizational HR data..."):
             context = {
-                "staffline_employee": staff_emp,
+                "staffline_employee_data": staff_df.to_dict(orient="records"),
+                "keka_finance_data": keka_df.to_dict(orient="records"),
+                "unlocku_performance_data": unlocku_df.to_dict(orient="records"),
                 "staffline_policies": company_policies,
-                "keka_finance": keka_emp,
-                "unlocku_performance": unlocku_emp,
                 "user_question": user_query
             }
 
-            final_report = generate_final_hr_report(context)
+            result = generate_hr_decision(context)
 
-        st.markdown("### 📑 HR Decision Report")
-        st.markdown(final_report)
+        st.markdown("### 📑 HR Intelligence Result")
+        st.markdown(result)
 
-        pdf_bytes = generate_pdf_report(final_report)
+        pdf_bytes = generate_pdf_report(result)
 
         st.download_button(
-            "📥 Download HR Report (PDF)",
+            "📥 Download Result as PDF",
             data=pdf_bytes,
-            file_name=f"HR_Report_{employee_id}.pdf",
+            file_name="HR_Intelligence_Report.pdf",
             mime="application/pdf"
         )
 
 else:
-    st.info("⬅ Upload all portal data and select an employee")
+    st.info("⬅ Upload all datasets to enable HR Intelligence")
