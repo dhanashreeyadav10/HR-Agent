@@ -5,9 +5,6 @@ from PIL import Image
 import pytesseract
 from backend import generate_ai_explanation
 
-# Optional: reset once for safety
-st.session_state.clear()
-
 # -------------------------
 # PAGE CONFIG
 # -------------------------
@@ -17,13 +14,21 @@ st.set_page_config(
 )
 
 st.title("🧑‍💼 HR Knowledge-Based Intelligence Agent")
-st.caption("Employee data + Company policies → HR Insights")
+st.caption("Employee data + Company policies → Policy-aware HR insights")
 
 # =========================
-# LEFT PANEL — UPLOADS
+# LEFT PANEL — BRANDING
 # =========================
+st.sidebar.image(
+    "compunnel_logo.png",
+    use_container_width=True
+)
+
 st.sidebar.header("📥 Knowledge Base Upload")
 
+# =========================
+# UPLOAD FILES
+# =========================
 emp_file = st.sidebar.file_uploader(
     "Upload Employee Data (CSV / Excel)",
     type=["csv", "xlsx"]
@@ -53,22 +58,26 @@ if emp_file:
 # LOAD POLICY DATA
 # -------------------------
 if policy_file:
-    name = policy_file.name.lower()
+    try:
+        name = policy_file.name.lower()
 
-    if name.endswith(".txt"):
-        company_policies = policy_file.read().decode("utf-8")
+        if name.endswith(".txt"):
+            company_policies = policy_file.read().decode("utf-8")
 
-    elif name.endswith(".pdf"):
-        with pdfplumber.open(policy_file) as pdf:
-            company_policies = "\n".join(
-                page.extract_text() or "" for page in pdf.pages
-            )
+        elif name.endswith(".pdf"):
+            with pdfplumber.open(policy_file) as pdf:
+                company_policies = "\n".join(
+                    page.extract_text() or "" for page in pdf.pages
+                )
 
-    elif name.endswith((".png", ".jpg", ".jpeg")):
-        image = Image.open(policy_file)
-        company_policies = pytesseract.image_to_string(image)
+        elif name.endswith((".png", ".jpg", ".jpeg")):
+            image = Image.open(policy_file)
+            company_policies = pytesseract.image_to_string(image)
 
-    st.sidebar.success("Company policy loaded")
+        st.sidebar.success("Company policy loaded")
+
+    except Exception as e:
+        st.sidebar.error(f"Policy extraction failed: {e}")
 
 # =========================
 # EMPLOYEE SELECTION
@@ -87,12 +96,12 @@ if employee_df is not None:
         .to_dict()
     )
 
-    # OPTIONAL: minimal info only
+    # Minimal info only (no JSON on main screen)
     st.sidebar.markdown(
         f"""
-        **Name:** {employee_data.get('name')}  
-        **Department:** {employee_data.get('department')}  
-        **Status:** {employee_data.get('employment_status')}
+        **Name:** {employee_data.get('name', 'N/A')}  
+        **Department:** {employee_data.get('department', 'N/A')}  
+        **Status:** {employee_data.get('employment_status', 'N/A')}
         """
     )
 
