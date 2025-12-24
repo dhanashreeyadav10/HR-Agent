@@ -29,40 +29,76 @@
 #     st.markdown(explanation)
 
 
+
 import streamlit as st
 import pandas as pd
 from backend import generate_ai_explanation
 
+# 🔴 FORCE RESET (remove later)
+st.session_state.clear()
+
 # -------------------------
-# Page Configuration
+# PAGE CONFIG
 # -------------------------
-st.set_page_config(page_title="HR Intelligence Agent", layout="wide")
-st.title("🧑‍💼 HR Employee Intelligence Agent")
+st.set_page_config(
+    page_title="HR Knowledge-Based Intelligence Agent",
+    layout="wide"
+)
+
+st.markdown("## 🧑‍💼 HR Knowledge-Based Intelligence Agent")
+st.markdown(
+    "This system analyzes **employee data + company policies** "
+    "and provides **policy-aware HR insights**."
+)
 
 # =========================
-# LEFT PANEL — DATA INGESTION
+# LEFT PANEL — DATA UPLOAD
 # =========================
-st.sidebar.header("📤 Upload Employee Data")
+st.sidebar.markdown("## 📥 Knowledge Base Upload")
 
-uploaded_file = st.sidebar.file_uploader(
-    "Upload CSV or Excel",
+emp_file = st.sidebar.file_uploader(
+    "Upload Employee Master Data",
     type=["csv", "xlsx"]
 )
 
+policy_file = st.sidebar.file_uploader(
+    "Upload Company Policies (Staffline)",
+    type=["csv", "xlsx", "txt"]
+)
+
 employee_df = None
-employee_data = None
+company_policies = ""
 
-if uploaded_file:
-    if uploaded_file.name.endswith(".csv"):
-        employee_df = pd.read_csv(uploaded_file)
-    else:
-        employee_df = pd.read_excel(uploaded_file)
-
+if emp_file:
+    employee_df = (
+        pd.read_csv(emp_file)
+        if emp_file.name.endswith(".csv")
+        else pd.read_excel(emp_file)
+    )
     st.sidebar.success("Employee data loaded")
 
-    # Employee selector
+if policy_file:
+    if policy_file.name.endswith(".txt"):
+        company_policies = policy_file.read().decode("utf-8")
+    else:
+        df_policy = (
+            pd.read_csv(policy_file)
+            if policy_file.name.endswith(".csv")
+            else pd.read_excel(policy_file)
+        )
+        company_policies = df_policy.to_string(index=False)
+
+    st.sidebar.success("Company policies loaded")
+
+# =========================
+# EMPLOYEE SELECTION
+# =========================
+employee_data = None
+
+if employee_df is not None:
+    st.sidebar.markdown("### 👤 Select Employee")
     emp_id = st.sidebar.selectbox(
-        "Select Employee ID",
+        "Employee ID",
         employee_df["employee_id"].astype(str)
     )
 
@@ -73,40 +109,37 @@ if uploaded_file:
     )
 
 # =========================
-# RIGHT PANEL — DYNAMIC VIEW
+# RIGHT PANEL — ANALYSIS
 # =========================
 if employee_data:
 
-    col1, col2 = st.columns([1.2, 1.8])
+    left, right = st.columns([1.4, 1.6])
 
-    # -------------------------
-    # Employee Snapshot
-    # -------------------------
-    with col1:
-        st.subheader("📄 Employee Snapshot")
+    with left:
+        st.markdown("### 📄 Employee Details (Dynamic)")
         st.json(employee_data)
 
-    # -------------------------
-    # Query + Output
-    # -------------------------
-    with col2:
-        st.subheader("🧠 HR Intelligence Query")
+    with right:
+        st.markdown("### 🧠 HR Intelligence Query")
 
         user_query = st.text_area(
-            "Ask any HR-related question about this employee",
+            "Ask a policy-aware HR question",
             height=120,
-            placeholder="e.g. Is this employee eligible for confirmation?"
+            placeholder="Is this employee eligible for confirmation as per company policy?"
         )
 
-        analyze_btn = st.button("🔍 Get Result")
+        run_btn = st.button("🔍 Get HR Insight", use_container_width=True)
 
-        if analyze_btn:
-            if not user_query.strip():
-                st.warning("Please enter a query before clicking Get Result.")
+        if run_btn:
+            if not company_policies:
+                st.error("❌ Company policies not uploaded")
+            elif not user_query.strip():
+                st.error("❌ Please enter a question")
             else:
-                with st.spinner("HR Agent analyzing..."):
+                with st.spinner("Analyzing employee data & policies..."):
                     context = {
                         "employee_data": employee_data,
+                        "company_policies": company_policies,
                         "user_question": user_query
                     }
 
@@ -116,5 +149,7 @@ if employee_data:
                 st.markdown(response)
 
 else:
-    st.info("⬅ Upload employee data and select an employee to begin")
+    st.warning("⬅ Upload employee data and policies to begin analysis")
+
+
 
