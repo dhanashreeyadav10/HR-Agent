@@ -1,73 +1,3 @@
-# import os
-# from groq import Groq
-
-# # -------------------------
-# # Load GROQ API Key
-# # -------------------------
-# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-# if not GROQ_API_KEY:
-#     raise RuntimeError(
-#         "GROQ_API_KEY missing. Add it to Streamlit Secrets or environment variables."
-#     )
-
-# client = Groq(api_key=GROQ_API_KEY)
-
-# # -------------------------
-# # HR Knowledge-Based Agent
-# # -------------------------
-# def generate_ai_explanation(context: dict) -> str:
-#     """
-#     context = {
-#         employee_data: dict,
-#         company_policies: str,
-#         user_question: str
-#     }
-#     """
-
-#     prompt = f"""
-# You are a senior HR Intelligence Agent.
-
-# You must:
-# • Analyze employee data deeply
-# • Apply company policies first
-# • Use general HR knowledge only if policy is silent
-# • Clearly explain decisions
-# • Maintain professional HR tone
-
-# =============================
-# EMPLOYEE DATA
-# =============================
-# {context["employee_data"]}
-
-# =============================
-# COMPANY POLICIES
-# =============================
-# {context["company_policies"]}
-
-# =============================
-# USER QUESTION
-# =============================
-# {context["user_question"]}
-
-# =============================
-# RESPONSE FORMAT
-# =============================
-# • Data-driven analysis
-# • Policy references
-# • Clear conclusion
-# """
-
-#     response = client.chat.completions.create(
-#         model="llama-3.1-8b-instant",
-#         messages=[
-#             {"role": "system", "content": "You are an expert enterprise HR analyst."},
-#             {"role": "user", "content": prompt}
-#         ],
-#         temperature=0.2
-#     )
-
-#     return response.choices[0].message.content
-
 import os
 from groq import Groq
 
@@ -149,3 +79,68 @@ INSTRUCTIONS
     )
 
     return response.choices[0].message.content
+
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+
+# -------------------------
+# HR SUMMARY AGENT
+# -------------------------
+def generate_hr_summary(analysis_text: str) -> str:
+    """
+    Converts detailed HR analysis into an executive summary
+    """
+
+    prompt = f"""
+You are an HR Executive Summary Agent.
+
+Given the detailed HR analysis below:
+----------------------------------
+{analysis_text}
+----------------------------------
+
+Your task:
+• Summarize in simple, executive-friendly language
+• Highlight final decision
+• Mention key supporting reasons
+• Keep it concise (no more than 8 bullet points)
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": "You summarize HR decisions for leadership."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.2
+    )
+
+    return response.choices[0].message.content
+
+
+# -------------------------
+# PDF REPORT GENERATOR
+# -------------------------
+def generate_pdf_report(employee_id: str, summary_text: str) -> str:
+    """
+    Creates a downloadable HR PDF report
+    """
+
+    file_path = f"/mnt/data/HR_Report_{employee_id}.pdf"
+
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph("<b>HR Intelligence Report</b>", styles["Title"]))
+    story.append(Paragraph(f"<b>Employee ID:</b> {employee_id}", styles["Normal"]))
+    story.append(Paragraph("<br/>", styles["Normal"]))
+
+    for line in summary_text.split("\n"):
+        story.append(Paragraph(line, styles["Normal"]))
+
+    doc.build(story)
+
+    return file_path
