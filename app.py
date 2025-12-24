@@ -33,19 +33,24 @@ import streamlit as st
 import pandas as pd
 from backend import generate_ai_explanation
 
-st.set_page_config(page_title="HR Intelligence Chatbot", layout="wide")
+# -------------------------
+# Page Configuration
+# -------------------------
+st.set_page_config(page_title="HR Intelligence Agent", layout="wide")
 st.title("🧑‍💼 HR Employee Intelligence Agent")
 
-# -------------------------
-# Upload HR Data
-# -------------------------
+# =========================
+# LEFT PANEL — DATA INGESTION
+# =========================
 st.sidebar.header("📤 Upload Employee Data")
+
 uploaded_file = st.sidebar.file_uploader(
-    "Upload CSV or Excel file",
+    "Upload CSV or Excel",
     type=["csv", "xlsx"]
 )
 
 employee_df = None
+employee_data = None
 
 if uploaded_file:
     if uploaded_file.name.endswith(".csv"):
@@ -53,14 +58,9 @@ if uploaded_file:
     else:
         employee_df = pd.read_excel(uploaded_file)
 
-    st.sidebar.success("Employee data loaded successfully")
+    st.sidebar.success("Employee data loaded")
 
-# -------------------------
-# Select Employee
-# -------------------------
-employee_data = None
-
-if employee_df is not None:
+    # Employee selector
     emp_id = st.sidebar.selectbox(
         "Select Employee ID",
         employee_df["employee_id"].astype(str)
@@ -72,45 +72,49 @@ if employee_df is not None:
         .to_dict()
     )
 
-    st.sidebar.subheader("📄 Employee Context")
-    st.sidebar.json(employee_data)
-
-# -------------------------
-# Chat Session
-# -------------------------
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# -------------------------
-# Chat Input
-# -------------------------
+# =========================
+# RIGHT PANEL — DYNAMIC VIEW
+# =========================
 if employee_data:
-    user_query = st.chat_input("Ask HR questions about the selected employee")
 
-    if user_query:
-        st.session_state.messages.append(
-            {"role": "user", "content": user_query}
+    col1, col2 = st.columns([1.2, 1.8])
+
+    # -------------------------
+    # Employee Snapshot
+    # -------------------------
+    with col1:
+        st.subheader("📄 Employee Snapshot")
+        st.json(employee_data)
+
+    # -------------------------
+    # Query + Output
+    # -------------------------
+    with col2:
+        st.subheader("🧠 HR Intelligence Query")
+
+        user_query = st.text_area(
+            "Ask any HR-related question about this employee",
+            height=120,
+            placeholder="e.g. Is this employee eligible for confirmation?"
         )
-        with st.chat_message("user"):
-            st.markdown(user_query)
 
-        with st.chat_message("assistant"):
-            with st.spinner("HR Agent analyzing..."):
-                context = {
-                    "employee_data": employee_data,
-                    "user_question": user_query
-                }
-                response = generate_ai_explanation(context)
+        analyze_btn = st.button("🔍 Get Result")
 
-            st.markdown(response)
+        if analyze_btn:
+            if not user_query.strip():
+                st.warning("Please enter a query before clicking Get Result.")
+            else:
+                with st.spinner("HR Agent analyzing..."):
+                    context = {
+                        "employee_data": employee_data,
+                        "user_question": user_query
+                    }
 
-        st.session_state.messages.append(
-            {"role": "assistant", "content": response}
-        )
+                    response = generate_ai_explanation(context)
+
+                st.markdown("### 📊 AI Output")
+                st.markdown(response)
+
 else:
-    st.info("⬅ Upload employee data and select an employee to start chatting")
+    st.info("⬅ Upload employee data and select an employee to begin")
 
