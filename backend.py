@@ -15,82 +15,50 @@ if not GROQ_API_KEY:
 client = Groq(api_key=GROQ_API_KEY)
 
 # ======================================================
-# DYNAMIC HR DECISION AGENT (INDIVIDUAL + POPULATION)
+# SIGNAL-BASED HR DECISION AGENT
 # ======================================================
 def generate_hr_decision(context: dict) -> str:
     """
-    Handles both:
-    - Individual employee decisions
-    - Organization-wide HR analytics questions
+    Uses aggregated HR signals instead of raw data
     """
 
     prompt = f"""
-You are a Senior Enterprise HR Intelligence System.
+You are an Enterprise HR Intelligence Analyst.
 
-You have access to FULL ORGANIZATIONAL DATA from:
-- Staffline (employee master + policies)
-- Keka (finance & payroll)
-- UnlockU (performance & learning)
+You are provided with:
+• Aggregated HR signals (pre-computed)
+• Company HR policies
+• A business question
 
-DATASETS PROVIDED:
-• Employee Master (multiple employees)
-• Finance Data (multiple employees)
-• Performance Data (multiple employees)
-• Company Policies
+-----------------------------
+HR SIGNALS
+-----------------------------
+{context["hr_signals"]}
 
-----------------------------------
-EMPLOYEE MASTER DATA
-----------------------------------
-{context["staffline_employee_data"]}
-
-----------------------------------
-FINANCE DATA
-----------------------------------
-{context["keka_finance_data"]}
-
-----------------------------------
-PERFORMANCE DATA
-----------------------------------
-{context["unlocku_performance_data"]}
-
-----------------------------------
+-----------------------------
 COMPANY POLICIES
-----------------------------------
-{context["staffline_policies"]}
+-----------------------------
+{context["company_policies"]}
 
-----------------------------------
+-----------------------------
 USER QUESTION
-----------------------------------
+-----------------------------
 {context["user_question"]}
 
-----------------------------------
-INSTRUCTIONS (CRITICAL)
-----------------------------------
-1. FIRST determine the question type:
-   - Individual employee question
-   - Organization-wide / population analysis question
-
-2. If POPULATION analysis:
-   - Identify relevant risk signals (performance, payroll, learning, tenure)
-   - Return a LIST or SUMMARY of employees
-   - Mention WHY they are flagged
-   - Do NOT require employee_id selection
-
-3. If INDIVIDUAL analysis:
-   - Provide a formal HR Decision Report
-
-4. OUTPUT FORMAT:
-   - Clear headings
-   - Bullet points
-   - Formal HR tone
-   - Audit-ready language
-   - No emojis
+-----------------------------
+INSTRUCTIONS
+-----------------------------
+• Answer organization-wide HR questions
+• Use signals to identify risks and patterns
+• Mention employee IDs only from provided samples
+• Keep output formal, structured, and audit-ready
+• No emojis
 """
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
-            {"role": "system", "content": "You are an enterprise HR analytics and decision engine."},
+            {"role": "system", "content": "You analyze HR signals, not raw datasets."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.15
