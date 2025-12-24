@@ -9,3 +9,11 @@ groq
 pdfplumber
 pillow
 pytesseract
+
+streamlit
+pandas
+python-dotenv
+groq
+pdfplumber
+pillow
+pytesseract
