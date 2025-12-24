@@ -15,18 +15,18 @@ if not GROQ_API_KEY:
 client = Groq(api_key=GROQ_API_KEY)
 
 # ======================================================
-# SIGNAL-BASED HR DECISION AGENT
+# SIGNAL-BASED HR INTELLIGENCE AGENT
 # ======================================================
 def generate_hr_decision(context: dict) -> str:
     """
-    Uses aggregated HR signals instead of raw data
+    Uses aggregated HR signals (NOT raw data)
     """
 
     prompt = f"""
 You are an Enterprise HR Intelligence Analyst.
 
 You are provided with:
-• Aggregated HR signals (pre-computed)
+• Aggregated HR signals (computed outside the LLM)
 • Company HR policies
 • A business question
 
@@ -49,9 +49,10 @@ USER QUESTION
 INSTRUCTIONS
 -----------------------------
 • Answer organization-wide HR questions
-• Use signals to identify risks and patterns
-• Mention employee IDs only from provided samples
+• Identify risks, trends, and affected employees
+• Refer only to employee IDs present in the signal sample
 • Keep output formal, structured, and audit-ready
+• Do NOT request raw datasets
 • No emojis
 """
 
@@ -68,7 +69,7 @@ INSTRUCTIONS
 
 
 # ======================================================
-# CLOUD-SAFE PDF GENERATOR
+# CLOUD-SAFE PDF GENERATOR (IN-MEMORY)
 # ======================================================
 def generate_pdf_report(report_text: str) -> bytes:
     buffer = BytesIO()
@@ -76,7 +77,9 @@ def generate_pdf_report(report_text: str) -> bytes:
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph("<b>Compunnel – HR Intelligence Report</b>", styles["Title"]))
+    story.append(
+        Paragraph("<b>Compunnel – HR Intelligence Report</b>", styles["Title"])
+    )
     story.append(Paragraph("<br/>", styles["Normal"]))
 
     for line in report_text.split("\n"):
@@ -85,4 +88,5 @@ def generate_pdf_report(report_text: str) -> bytes:
 
     doc.build(story)
     buffer.seek(0)
+
     return buffer.getvalue()
