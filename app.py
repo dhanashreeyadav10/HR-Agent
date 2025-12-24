@@ -2,12 +2,8 @@ import streamlit as st
 from backend import generate_ai_explanation
 
 st.set_page_config(page_title="HR Agent", layout="wide")
-
 st.title("🧑‍💼 HR Employee Intelligence Agent")
 
-# -------------------------
-# Sample Employee Data
-# -------------------------
 employee_data = {
     "employee_id": 1002,
     "name": "Anita Sharma",
@@ -22,17 +18,11 @@ employee_data = {
     "confirmation_decision": "CONFIRM"
 }
 
-# -------------------------
-# Display Raw Data
-# -------------------------
 st.subheader("📄 Employee Record")
 st.json(employee_data)
 
-# -------------------------
-# Generate AI Explanation
-# -------------------------
 if st.button("🧠 Generate AI Explanation"):
-    with st.spinner("Analyzing employee status..."):
+    with st.spinner("Analyzing employee data..."):
         explanation = generate_ai_explanation(employee_data)
 
     st.markdown("## 🧠 AI Explanation")
