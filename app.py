@@ -20,7 +20,7 @@ st.caption("Employee data + Company policies → Policy-aware HR insights")
 # LEFT PANEL — BRANDING
 # =========================
 st.sidebar.image(
-    "compunnel_logo.png",
+    "compunnel_logo.jpg",
     use_container_width=True
 )
 
@@ -139,3 +139,4 @@ if employee_data:
 
 else:
     st.info("⬅ Upload employee data and company policy to begin")
+
