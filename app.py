@@ -1,152 +1,4 @@
-# import streamlit as st
-# import pandas as pd
-# import pdfplumber
-# from PIL import Image
-# import pytesseract
-# from backend import generate_ai_explanation
-
-# # -------------------------
-# # PAGE CONFIG
-# # -------------------------
-# st.set_page_config(
-#     page_title="HR Knowledge-Based Intelligence Agent",
-#     layout="wide"
-# )
-
-# st.title("🧑‍💼 HR Knowledge-Based Intelligence Agent")
-# st.caption("Employee data + Company policies → Policy-aware HR insights")
-
-# # =========================
-# # LEFT PANEL — BRANDING
-# # =========================
-# st.sidebar.image(
-#     "compunnel_logo.jpg",
-#     use_container_width=True
-# )
-
-# st.sidebar.header("📥 Knowledge Base Upload")
-
-# # =========================
-# # UPLOAD FILES
-# # =========================
-# emp_file = st.sidebar.file_uploader(
-#     "Upload Employee Data (CSV / Excel)",
-#     type=["csv", "xlsx"]
-# )
-
-# policy_file = st.sidebar.file_uploader(
-#     "Upload Company Policy (PDF / TXT / Image)",
-#     type=["pdf", "txt", "png", "jpg", "jpeg"]
-# )
-
-# employee_df = None
-# employee_data = None
-# company_policies = ""
-
-# # -------------------------
-# # LOAD EMPLOYEE DATA
-# # -------------------------
-# if emp_file:
-#     employee_df = (
-#         pd.read_csv(emp_file)
-#         if emp_file.name.endswith(".csv")
-#         else pd.read_excel(emp_file)
-#     )
-#     st.sidebar.success("Employee data loaded")
-
-# # -------------------------
-# # LOAD POLICY DATA
-# # -------------------------
-# if policy_file:
-#     try:
-#         name = policy_file.name.lower()
-
-#         if name.endswith(".txt"):
-#             company_policies = policy_file.read().decode("utf-8")
-
-#         elif name.endswith(".pdf"):
-#             with pdfplumber.open(policy_file) as pdf:
-#                 company_policies = "\n".join(
-#                     page.extract_text() or "" for page in pdf.pages
-#                 )
-
-#         elif name.endswith((".png", ".jpg", ".jpeg")):
-#             image = Image.open(policy_file)
-#             company_policies = pytesseract.image_to_string(image)
-
-#         st.sidebar.success("Company policy loaded")
-
-#     except Exception as e:
-#         st.sidebar.error(f"Policy extraction failed: {e}")
-
-# # =========================
-# # EMPLOYEE SELECTION
-# # =========================
-# if employee_df is not None:
-#     st.sidebar.subheader("👤 Select Employee")
-
-#     emp_id = st.sidebar.selectbox(
-#         "Employee ID",
-#         employee_df["employee_id"].astype(str)
-#     )
-
-#     employee_data = (
-#         employee_df[employee_df["employee_id"].astype(str) == emp_id]
-#         .iloc[0]
-#         .to_dict()
-#     )
-
-#     # Minimal info only (no JSON on main screen)
-#     st.sidebar.markdown(
-#         f"""
-#         **Name:** {employee_data.get('name', 'N/A')}  
-#         **Department:** {employee_data.get('department', 'N/A')}  
-#         **Status:** {employee_data.get('employment_status', 'N/A')}
-#         """
-#     )
-
-# # =========================
-# # RIGHT PANEL — QUERY & OUTPUT
-# # =========================
-# if employee_data:
-
-#     st.subheader("🧠 HR Intelligence Query")
-
-#     user_query = st.text_area(
-#         "Ask a policy-aware HR question",
-#         height=120,
-#         placeholder="Is this employee eligible for WFH as per company policy?"
-#     )
-
-#     if st.button("🔍 Get HR Insight", use_container_width=True):
-
-#         if not company_policies.strip():
-#             st.error("❌ Please upload company policy")
-#         elif not user_query.strip():
-#             st.error("❌ Please enter a question")
-#         else:
-#             with st.spinner("Analyzing employee data & policies..."):
-#                 context = {
-#                     "employee_data": employee_data,      # hidden
-#                     "company_policies": company_policies,
-#                     "user_question": user_query
-#                 }
-
-#                 response = generate_ai_explanation(context)
-
-#             st.markdown("### 📊 AI Output")
-#             st.markdown(response)
-
-# else:
-#     st.info("⬅ Upload employee data and company policy to begin")
-
-
-
-
-
-
-
-
+from backend import generate_hr_summary, generate_pdf_report
 
 import streamlit as st
 import pandas as pd
@@ -301,22 +153,48 @@ if employee_id and staff_df is not None:
 
     if st.button("🔍 Get HR Insight", use_container_width=True):
 
-        if not company_policies:
-            st.error("Company policies missing (Staffline)")
-        else:
-            with st.spinner("Correlating Staffline + Keka + UnlockU data..."):
-                context = {
-                    "staffline_employee": staff_emp,
-                    "staffline_policies": company_policies,
-                    "keka_finance": keka_emp,
-                    "unlocku_performance": unlocku_emp,
-                    "user_question": user_query
-                }
+    if not company_policies:
+        st.error("Company policies missing")
+    elif not user_query.strip():
+        st.error("Please enter a question")
+    else:
+        with st.spinner("Running HR Intelligence analysis..."):
+            context = {
+                "staffline_employee": staff_emp,
+                "staffline_policies": company_policies,
+                "keka_finance": keka_emp,
+                "unlocku_performance": unlocku_emp,
+                "user_question": user_query
+            }
 
-                response = generate_ai_explanation(context)
+            analysis_result = generate_ai_explanation(context)
 
-            st.markdown("### 📊 AI Output")
-            st.markdown(response)
+        st.markdown("### 📊 Detailed HR Analysis")
+        st.markdown(analysis_result)
+
+        # -------------------------
+        # SUMMARY AGENT
+        # -------------------------
+        with st.spinner("Generating executive summary..."):
+            summary_result = generate_hr_summary(analysis_result)
+
+        st.markdown("### 🧾 Executive Summary")
+        st.markdown(summary_result)
+
+        # -------------------------
+        # PDF GENERATION
+        # -------------------------
+        pdf_path = generate_pdf_report(employee_id, summary_result)
+
+        with open(pdf_path, "rb") as pdf_file:
+            st.download_button(
+                label="📥 Download HR Report (PDF)",
+                data=pdf_file,
+                file_name=f"HR_Report_{employee_id}.pdf",
+                mime="application/pdf"
+            )
+
 
 else:
     st.info("⬅ Upload all portal data and select an employee")
+
