@@ -2,32 +2,30 @@ import os
 from groq import Groq
 
 # -------------------------
-# Load API Key
+# Load GROQ key (Cloud-safe)
 # -------------------------
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY is missing. Set it in environment variables.")
+    raise RuntimeError(
+        "GROQ_API_KEY is missing. "
+        "Add it in Streamlit Cloud → Settings → Secrets."
+    )
 
 client = Groq(api_key=GROQ_API_KEY)
 
 # -------------------------
-# AI Explanation Generator
+# AI Explanation
 # -------------------------
 def generate_ai_explanation(employee: dict) -> str:
-    """
-    Generates a detailed HR-grade explanation using LLM.
-    """
-
     prompt = f"""
 You are an HR Intelligence Agent.
 
-Here is the employee data:
+Employee data:
 {employee}
 
-Explain this employee's current HR status in a clear, structured, and professional way.
-Use bullet points and headings.
-Avoid generic statements.
-Be factual and HR-grade.
+Provide a detailed, structured HR explanation.
+Use bullet points and professional tone.
 """
 
     response = client.chat.completions.create(
