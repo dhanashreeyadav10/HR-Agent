@@ -15,93 +15,82 @@ if not GROQ_API_KEY:
 client = Groq(api_key=GROQ_API_KEY)
 
 # ======================================================
-# HR FINAL DECISION AGENT (MERGED)
+# DYNAMIC HR DECISION AGENT (INDIVIDUAL + POPULATION)
 # ======================================================
-def generate_final_hr_report(context: dict) -> str:
+def generate_hr_decision(context: dict) -> str:
     """
-    Generates a clean, formal, audit-ready HR Decision Report
+    Handles both:
+    - Individual employee decisions
+    - Organization-wide HR analytics questions
     """
 
     prompt = f"""
-You are a Senior HR Decision Authority preparing an official HR report.
+You are a Senior Enterprise HR Intelligence System.
 
-Authoritative Systems:
-- Staffline: Employee master & company policies (highest authority)
-- Keka: Payroll & finance data
-- UnlockU: Performance & learning data
+You have access to FULL ORGANIZATIONAL DATA from:
+- Staffline (employee master + policies)
+- Keka (finance & payroll)
+- UnlockU (performance & learning)
 
-Do NOT expose raw data.
-Do NOT show internal reasoning.
-Write a clean, formal HR report.
+DATASETS PROVIDED:
+• Employee Master (multiple employees)
+• Finance Data (multiple employees)
+• Performance Data (multiple employees)
+• Company Policies
 
-==============================
-EMPLOYEE DATA (STAFFLINE)
-==============================
-{context["staffline_employee"]}
+----------------------------------
+EMPLOYEE MASTER DATA
+----------------------------------
+{context["staffline_employee_data"]}
 
-==============================
-COMPANY POLICIES (STAFFLINE)
-==============================
+----------------------------------
+FINANCE DATA
+----------------------------------
+{context["keka_finance_data"]}
+
+----------------------------------
+PERFORMANCE DATA
+----------------------------------
+{context["unlocku_performance_data"]}
+
+----------------------------------
+COMPANY POLICIES
+----------------------------------
 {context["staffline_policies"]}
 
-==============================
-FINANCE DATA (KEKA)
-==============================
-{context["keka_finance"]}
-
-==============================
-PERFORMANCE DATA (UNLOCKU)
-==============================
-{context["unlocku_performance"]}
-
-==============================
-USER QUERY
-==============================
+----------------------------------
+USER QUESTION
+----------------------------------
 {context["user_question"]}
 
-==============================
-OUTPUT FORMAT (STRICT)
-==============================
+----------------------------------
+INSTRUCTIONS (CRITICAL)
+----------------------------------
+1. FIRST determine the question type:
+   - Individual employee question
+   - Organization-wide / population analysis question
 
-HR DECISION REPORT
+2. If POPULATION analysis:
+   - Identify relevant risk signals (performance, payroll, learning, tenure)
+   - Return a LIST or SUMMARY of employees
+   - Mention WHY they are flagged
+   - Do NOT require employee_id selection
 
-1. Employee Overview
-- Role, department, employment type, tenure
+3. If INDIVIDUAL analysis:
+   - Provide a formal HR Decision Report
 
-2. Policy Evaluation
-- Applicable policies
-- Eligibility checks
-
-3. Performance Assessment
-- Performance status
-- Learning compliance
-
-4. Payroll & Compliance Review
-- Payroll readiness
-- Financial risks
-
-5. Risks & Exceptions
-- Clearly state risks or confirm none
-
-6. Final HR Decision
-- APPROVED / NOT APPROVED / CONDITIONAL
-- Short justification
-
-7. Recommended Next Actions
-- Clear, actionable HR steps
-
-Tone:
-- Formal
-- Professional
-- Audit-ready
-- Bullet points only
-- No emojis
+4. OUTPUT FORMAT:
+   - Clear headings
+   - Bullet points
+   - Formal HR tone
+   - Audit-ready language
+   - No emojis
 """
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
-            {"role": "system", "content": "You write official enterprise HR decision reports."},
+            {"role": "system", "content": "You are an enterprise HR analytics and decision engine."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.15
@@ -111,21 +100,15 @@ Tone:
 
 
 # ======================================================
-# CLOUD-SAFE PDF GENERATOR (IN-MEMORY)
+# CLOUD-SAFE PDF GENERATOR
 # ======================================================
 def generate_pdf_report(report_text: str) -> bytes:
-    """
-    Generates HR report PDF in memory (Streamlit Cloud safe)
-    """
-
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(
-        Paragraph("<b>Compunnel – HR Decision Report</b>", styles["Title"])
-    )
+    story.append(Paragraph("<b>Compunnel – HR Intelligence Report</b>", styles["Title"]))
     story.append(Paragraph("<br/>", styles["Normal"]))
 
     for line in report_text.split("\n"):
@@ -134,5 +117,4 @@ def generate_pdf_report(report_text: str) -> bytes:
 
     doc.build(story)
     buffer.seek(0)
-
     return buffer.getvalue()
