@@ -17,4 +17,6 @@ groq
 pdfplumber
 pillow
 pytesseract
-openpyxl
+reportlab
+
+
