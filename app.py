@@ -50,7 +50,11 @@ staff_df = finance_df = perf_df = None
 company_policies = ""
 
 if staff_emp_file:
-    staff_df = pd.read_csv(staff_emp_file) if staff_emp_file.name.endswith(".csv") else pd.read_excel(staff_emp_file)
+    staff_df = (
+        pd.read_csv(staff_emp_file)
+        if staff_emp_file.name.endswith(".csv")
+        else pd.read_excel(staff_emp_file)
+    )
     st.sidebar.success("Employee master loaded")
 
 if policy_file:
@@ -65,19 +69,30 @@ if policy_file:
     st.sidebar.success("Company policies loaded")
 
 if keka_file:
-    finance_df = pd.read_csv(keka_file) if keka_file.name.endswith(".csv") else pd.read_excel(keka_file)
+    finance_df = (
+        pd.read_csv(keka_file)
+        if keka_file.name.endswith(".csv")
+        else pd.read_excel(keka_file)
+    )
     st.sidebar.success("Finance data loaded")
 
 if unlocku_file:
-    perf_df = pd.read_csv(unlocku_file) if unlocku_file.name.endswith(".csv") else pd.read_excel(unlocku_file)
+    perf_df = (
+        pd.read_csv(unlocku_file)
+        if unlocku_file.name.endswith(".csv")
+        else pd.read_excel(unlocku_file)
+    )
     st.sidebar.success("Performance data loaded")
 
 # =========================
-# HR ANALYTICS LAYER (KEY FIX)
+# HR ANALYTICS LAYER (CRITICAL)
 # =========================
 def build_hr_signals(staff_df, finance_df, perf_df):
-    merged = perf_df.merge(staff_df, on="employee_id", how="left") \
-                    .merge(finance_df, on="employee_id", how="left")
+    merged = (
+        perf_df
+        .merge(staff_df, on="employee_id", how="left")
+        .merge(finance_df, on="employee_id", how="left")
+    )
 
     merged["attrition_risk"] = (
         (merged["performance_status"] == "NEEDS_IMPROVEMENT") |
@@ -93,7 +108,9 @@ def build_hr_signals(staff_df, finance_df, perf_df):
         "high_risk_sample": high_risk[
             ["employee_id", "department", "performance_status", "learning_hours_completed"]
         ].head(15).to_dict(orient="records"),
-        "department_risk_distribution": high_risk["department"].value_counts().head(5).to_dict()
+        "department_risk_distribution": (
+            high_risk["department"].value_counts().head(5).to_dict()
+        )
     }
 
     return signals
@@ -106,7 +123,10 @@ if staff_df is not None and finance_df is not None and perf_df is not None and c
     st.subheader("🧠 Ask HR Intelligence Questions")
 
     user_query = st.text_area(
-        "Examples:\n• List employees likely to leave\n• Which departments are at risk?\n• How many employees need HR intervention?",
+        "Examples:\n"
+        "• Provide a list of employees likely to leave the company\n"
+        "• Which departments are at highest attrition risk?\n"
+        "• How many employees need HR intervention?",
         height=140
     )
 
