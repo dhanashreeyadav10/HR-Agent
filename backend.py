@@ -15,90 +15,96 @@ if not GROQ_API_KEY:
 client = Groq(api_key=GROQ_API_KEY)
 
 # ======================================================
-# AGENT 1 — HR INTELLIGENCE (DETAILED ANALYSIS)
+# HR FINAL DECISION AGENT (MERGED)
 # ======================================================
-def generate_ai_explanation(context: dict) -> str:
+def generate_final_hr_report(context: dict) -> str:
+    """
+    Generates a clean, formal, audit-ready HR Decision Report
+    """
+
     prompt = f"""
-You are a Senior Enterprise HR Intelligence Agent.
+You are a Senior HR Decision Authority preparing an official HR report.
 
-SYSTEMS:
+Authoritative Systems:
 - Staffline: Employee master & company policies (highest authority)
-- Keka: Finance & payroll
-- UnlockU: Performance & learning
+- Keka: Payroll & finance data
+- UnlockU: Performance & learning data
 
---------------------------------
-STAFFLINE — EMPLOYEE DATA
---------------------------------
+Do NOT expose raw data.
+Do NOT show internal reasoning.
+Write a clean, formal HR report.
+
+==============================
+EMPLOYEE DATA (STAFFLINE)
+==============================
 {context["staffline_employee"]}
 
---------------------------------
-STAFFLINE — COMPANY POLICIES
---------------------------------
+==============================
+COMPANY POLICIES (STAFFLINE)
+==============================
 {context["staffline_policies"]}
 
---------------------------------
-KEKA — FINANCE DATA
---------------------------------
+==============================
+FINANCE DATA (KEKA)
+==============================
 {context["keka_finance"]}
 
---------------------------------
-UNLOCKU — PERFORMANCE DATA
---------------------------------
+==============================
+PERFORMANCE DATA (UNLOCKU)
+==============================
 {context["unlocku_performance"]}
 
---------------------------------
-USER QUESTION
---------------------------------
+==============================
+USER QUERY
+==============================
 {context["user_question"]}
 
---------------------------------
-INSTRUCTIONS
---------------------------------
-• Apply company policies first
-• Correlate finance and performance
-• Highlight risks or blockers
-• Use bullet points
-• Provide clear HR recommendation
+==============================
+OUTPUT FORMAT (STRICT)
+==============================
+
+HR DECISION REPORT
+
+1. Employee Overview
+- Role, department, employment type, tenure
+
+2. Policy Evaluation
+- Applicable policies
+- Eligibility checks
+
+3. Performance Assessment
+- Performance status
+- Learning compliance
+
+4. Payroll & Compliance Review
+- Payroll readiness
+- Financial risks
+
+5. Risks & Exceptions
+- Clearly state risks or confirm none
+
+6. Final HR Decision
+- APPROVED / NOT APPROVED / CONDITIONAL
+- Short justification
+
+7. Recommended Next Actions
+- Clear, actionable HR steps
+
+Tone:
+- Formal
+- Professional
+- Audit-ready
+- Bullet points only
+- No emojis
 """
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
-            {"role": "system", "content": "You are an expert HR analyst."},
+            {"role": "system", "content": "You write official enterprise HR decision reports."},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.2
-    )
-
-    return response.choices[0].message.content
-
-
-# ======================================================
-# AGENT 2 — HR SUMMARY AGENT
-# ======================================================
-def generate_hr_summary(analysis_text: str) -> str:
-    prompt = f"""
-You are an HR Executive Summary Agent.
-
-Summarize the analysis into:
-• Final decision
-• Key supporting reasons
-• Risks (if any)
-• Recommended next action
-
-Limit to 6–8 bullet points.
-
---------------------------------
-{analysis_text}
-"""
-
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": "You summarize HR decisions for leadership."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.2
+        temperature=0.15
     )
 
     return response.choices[0].message.content
@@ -107,17 +113,22 @@ Limit to 6–8 bullet points.
 # ======================================================
 # CLOUD-SAFE PDF GENERATOR (IN-MEMORY)
 # ======================================================
-def generate_pdf_report(summary_text: str) -> bytes:
-    buffer = BytesIO()
+def generate_pdf_report(report_text: str) -> bytes:
+    """
+    Generates HR report PDF in memory (Streamlit Cloud safe)
+    """
 
+    buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph("<b>Compunnel – HR Intelligence Report</b>", styles["Title"]))
+    story.append(
+        Paragraph("<b>Compunnel – HR Decision Report</b>", styles["Title"])
+    )
     story.append(Paragraph("<br/>", styles["Normal"]))
 
-    for line in summary_text.split("\n"):
+    for line in report_text.split("\n"):
         if line.strip():
             story.append(Paragraph(line, styles["Normal"]))
 
