@@ -4,3 +4,4 @@ numpy
 faker
 scikit-learn
 matplotlib
+python-dotenv
