@@ -1,0 +1,11 @@
+employee_id,name,dob,gender,date_of_joining,employment_status,department,designation,manager_id,cost_center,employment_type,aadhaar,pan,bank_account,probation_end_date,manager_feedback
+1001,Rahul Sharma,1992-04-12,Male,2023-01-10,Active,Engineering,Software Engineer,2001,ENG-01,FT,123412341234,ABCDE1234F,SBIN0001234,2023-07-10,Excellent performance and learning attitude
+1002,Priya Verma,1995-08-22,Female,2023-03-01,Active,HR,HR Executive,2002,HR-01,FT,,PQRSX6789K,ICIC0005678,2023-09-01,Good communication skills
+1003,Amit Patel,1990-11-05,Male,2022-06-15,Resigned,Finance,Accountant,2003,FIN-01,FT,987698769876,LMNOP4321Q,HDFC0009876,2022-12-15,Average performance
+1004,Sneha Iyer,1998-02-18,Female,2024-01-08,Active,Sales,Sales Executive,2004,SALES-01,Contract,456745674567,,AXIS0003456,2024-07-08,Needs improvement in closing deals
+1005,Vikram Singh,1988-09-30,Male,2021-11-20,Active,Engineering,Senior Engineer,2001,ENG-01,FT,234523452345,ZXCVB6789M,SBIN0004321,2022-05-20,Strong technical and mentoring skills
+1006,Neha Kulkarni,1996-12-11,Female,2024-02-01,Active,Marketing,Marketing Executive,2005,MKT-01,Intern,345634563456,,ICIC0008765,2024-08-01,Quick learner but needs guidance
+1007,Arjun Mehta,1991-05-27,Male,2020-07-10,Active,Data & AI,ML Engineer,2006,DAI-01,FT,567856785678,QWERT1234U,HDFC0001122,2021-01-10,Excellent problem-solving skills
+1008,Pooja Nair,1994-03-14,Female,2022-09-05,Exit,Operations,Operations Manager,2007,OPS-01,FT,789078907890,ASDFG9876R,SBIN0009988,2023-03-05,Good operational control
+1009,Karan Malhotra,1999-07-19,Male,2024-01-15,Active,Engineering,Software Engineer,2001,ENG-01,FT,,RTYUI4567O,,2024-07-15,Very enthusiastic fresher
+1010,Ananya Bose,1993-10-02,Female,2023-05-20,Active,Finance,Finance Analyst,2003,FIN-01,FT,112211221122,GHJKL5678P,ICIC0002233,2023-11-20,Good analytical skills
