@@ -9,7 +9,7 @@ groq
 pdfplumber
 pillow
 pytesseract
-
+openpyxl
 streamlit
 pandas
 python-dotenv
@@ -18,5 +18,6 @@ pdfplumber
 pillow
 pytesseract
 reportlab
+
 
 
