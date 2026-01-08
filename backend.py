@@ -101,14 +101,71 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 
-import streamlit as st
-import os
+# ======================================================
+# GROQ CLIENT (MUST BE GLOBAL)
+# ======================================================
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
-st.write("🔑 Secret exists:", "GROQ_API_KEY" in st.secrets)
-st.write("🔑 Env exists:", bool(os.getenv("GROQ_API_KEY")))
+client = Groq(api_key=GROQ_API_KEY)
 
-key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
-st.write("🔑 Key prefix:", key[:6] if key else "None")
+# ======================================================
+# HR INTELLIGENCE AGENT
+# ======================================================
+def generate_hr_decision(context: dict) -> str:
+    prompt = f"""
+You are an Enterprise HR Intelligence Analyst.
+
+HR SIGNALS:
+{context["hr_signals"]}
+
+COMPANY POLICIES:
+{context["company_policies"]}
+
+USER QUESTION:
+{context["user_question"]}
+
+INSTRUCTIONS:
+- Answer at organization level
+- Identify risks, trends, and impacted employees
+- Refer only to employee IDs provided
+- Output must be audit-ready
+- Do not request raw datasets
+"""
+
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "system", "content": "You analyze HR signals only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.15
+    )
+
+    return response.choices[0].message.content
+
+
+# ======================================================
+# PDF REPORT GENERATOR
+# ======================================================
+def generate_pdf_report(report_text: str) -> bytes:
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(
+        Paragraph("<b>Compunnel – HR Intelligence Report</b>", styles["Title"])
+    )
+    story.append(Paragraph("<br/>", styles["Normal"]))
+
+    for line in report_text.split("\n"):
+        if line.strip():
+            story.append(Paragraph(line, styles["Normal"]))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
 
 # ======================================================
 # HR INTELLIGENCE AGENT
@@ -165,4 +222,5 @@ def generate_pdf_report(report_text: str) -> bytes:
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
+
 
