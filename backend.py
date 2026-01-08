@@ -101,15 +101,14 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 
-# -------------------------
-# GROQ CLIENT (STREAMLIT SAFE)
-# -------------------------
-GROQ_API_KEY = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+import streamlit as st
+import os
 
-if not GROQ_API_KEY:
-    raise RuntimeError("❌ GROQ_API_KEY not found. Add it to Streamlit secrets.")
+st.write("🔑 Secret exists:", "GROQ_API_KEY" in st.secrets)
+st.write("🔑 Env exists:", bool(os.getenv("GROQ_API_KEY")))
 
-client = Groq(api_key=GROQ_API_KEY)
+key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+st.write("🔑 Key prefix:", key[:6] if key else "None")
 
 # ======================================================
 # HR INTELLIGENCE AGENT
@@ -166,3 +165,4 @@ def generate_pdf_report(report_text: str) -> bytes:
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
+
