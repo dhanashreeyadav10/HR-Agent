@@ -170,11 +170,11 @@ from backend import generate_hr_decision, generate_pdf_report
 # PAGE CONFIG
 # -------------------------
 st.set_page_config(
-    page_title="HR Intelligence Agent",
+    page_title="Core Employee Management",
     layout="wide"
 )
 
-st.title("🧑‍💼 HR Intelligence Agent")
+st.title("🧑‍💼 Core Employee Management")
 st.caption("Organization-wide HR Analytics & Decision Intelligence")
 
 # =========================
@@ -316,3 +316,4 @@ if staff_df is not None and finance_df is not None and perf_df is not None and c
 
 else:
     st.info("⬅ Upload all datasets to enable HR Intelligence")
+
